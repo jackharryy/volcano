@@ -14,6 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
+      problems: {
+        Row: {
+          assignee_email: string | null
+          assignee_id: string | null
+          assignee_name: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          organization_id: string
+          priority: string | null
+          reporter_email: string | null
+          reporter_name: string | null
+          status: string | null
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_email?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          organization_id: string
+          priority?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
+          status?: string | null
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_email?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          priority?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
+          status?: string | null
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problems_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problems_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problems_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          parent_comment_id: string | null
+          problem_id: string
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          problem_id: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          problem_id?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_comments_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problem_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_events: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json | null
+          problem_id: string
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          problem_id: string
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          problem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_events_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problem_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          filename: string
+          id: string
+          problem_id: string
+          storage_path: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          filename: string
+          id?: string
+          problem_id: string
+          storage_path: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          problem_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_attachments_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "problem_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problem_comment_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_teams: {
+        Row: {
+          id: string
+          problem_id: string
+          team_id: string
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          team_id: string
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_teams_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problem_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           id: string
@@ -101,27 +386,30 @@ export type Database = {
       }
       teams: {
         Row: {
-          color: string | null
           created_at: string
+          icon: string | null
           id: string
           name: string
           organization_id: string
+          color: string | null
           updated_at: string
         }
         Insert: {
-          color?: string | null
           created_at?: string
+          icon?: string | null
           id?: string
           name: string
           organization_id: string
+          color?: string | null
           updated_at?: string
         }
         Update: {
-          color?: string | null
           created_at?: string
+          icon?: string | null
           id?: string
           name?: string
           organization_id?: string
+          color?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -139,7 +427,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      join_organization: {
+        Args: {
+          invite_code: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -13,10 +13,10 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 160 76% 70%;
+    --primary: 12 86% 64%; /* lava red */
     --primary-foreground: 222 47% 6%;
 
-    --secondary: 263 70% 76%;
+    --secondary: 28 92% 58%; /* molten orange */
     --secondary-foreground: 222 47% 6%;
 
     --muted: 217 33% 14%;
@@ -30,7 +30,7 @@
 
     --border: 217 33% 14%;
     --input: 217 33% 14%;
-    --ring: 160 76% 70%;
+    --ring: 10 82% 62%; /* volcanic red focus ring */
 
     --radius: 0.75rem;
 
@@ -38,8 +38,8 @@
     --glass-border: 0 0% 100% / 0.06;
     --glass-bg-start: 0 0% 100% / 0.02;
     --glass-bg-end: 0 0% 100% / 0.01;
-    --glow-cyan: 160 76% 70%;
-    --glow-purple: 263 70% 76%;
+    --glow-cyan: 12 86% 64%;
+    --glow-purple: 28 92% 58%;
     --surface-elevated: 222 47% 10%;
 
     --sidebar-background: 222 47% 5%;
@@ -119,11 +119,11 @@
   }
 
   .badge-priority-low {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
   }
 
   .badge-status-open {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
   }
 
   .badge-status-in-progress {
@@ -136,6 +136,16 @@
 
   .badge-status-snoozed {
     @apply bg-muted text-muted-foreground border border-muted;
+  }
+
+  .date-input {
+    @apply w-full rounded-md border border-sidebar-border bg-sidebar-accent px-2 py-1 text-xs text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30;
+    color-scheme: dark;
+  }
+
+  .date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    color-scheme: dark;
   }
 }
 

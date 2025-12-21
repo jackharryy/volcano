@@ -1,190 +1,264 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { NavSidebar } from '@/components/NavSidebar';
-import { TicketList } from '@/components/TicketList';
-import { TicketDetail } from '@/components/TicketDetail';
-import { QuickSubmitModal } from '@/components/QuickSubmitModal';
-import { tickets as mockTickets, currentUser } from '@/data/mockData';
-import { Ticket, Status, Priority, TicketFilters } from '@/types/ticket';
+import { NavSidebar } from '@/components/NavSidebar/components/NavSidebar';
+import { TicketList } from '@/components/TicketList/components/TicketList';
+import { TicketDetail } from '@/components/TicketDetail/components/TicketDetail';
+import { QuickSubmitModal } from '@/components/QuickSubmitModal/QuickSubmitModal';
+import { OrgSettingsDialog } from '@/components/AdminSettings/OrgSettingsDialog';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/hooks/use-toast';
+import { createOrganization, joinOrganization, leaveOrganization } from '@/lib/organizationHelpers';
+import { supabase } from '@/integrations/supabase/client';
+import { OrganizationSetup } from '@/features/dashboard/components/OrganizationSetup';
+import { useOrganizationData } from '@/features/dashboard/hooks/useOrganizationData';
+import { useTicketFilters } from '@/features/dashboard/hooks/useTicketFilters';
+import { useTicketsData } from '@/features/dashboard/hooks/useTicketsData';
+import { useFilteredTickets } from '@/features/dashboard/hooks/useFilteredTickets';
+import { getErrorMessage } from '@/lib/errorHelpers';
+import { getUserIdentity } from '@/lib/userHelpers';
+import type { OrgSettingsSectionId } from '@/components/AdminSettings/types';
 
 const Index = () => {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const { user } = useCurrentUser();
+  const navigate = useNavigate();
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-  
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<Status[]>([]);
-  const [priorityFilter, setPriorityFilter] = useState<Priority[]>([]);
-  const [teamFilter, setTeamFilter] = useState<string | null>(null);
-  const [assignedToMe, setAssignedToMe] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'tickets' | 'stats'>('tickets');
+  const [orgSettingsSection, setOrgSettingsSection] = useState<OrgSettingsSectionId>('organization');
+  const {
+    organization,
+    setOrganization,
+    loadingOrg,
+    teams,
+    loadingTeams,
+    isAdmin,
+    isOrgSettingsOpen,
+    setIsOrgSettingsOpen,
+    handleRenameOrganization,
+    handleCreateTeamDialog,
+    handleUpdateTeamDialog,
+    handleDeleteTeamDialog,
+    refreshOrganization,
+  } = useOrganizationData();
 
-  const filters: TicketFilters = {
-    status: statusFilter,
-    priority: priorityFilter,
-    teamId: teamFilter || undefined,
-    assigneeId: assignedToMe ? currentUser.id : undefined,
-    search: searchQuery,
+  const {
+    statusFilter,
+    priorityFilter,
+    teamFilter,
+    assignedToMe,
+    raisedByMe,
+    createdFrom,
+    createdTo,
+    searchQuery,
+    handleFilterChange,
+    filterState,
+  } = useTicketFilters(teams);
+
+  const {
+    tickets,
+    loadingTickets,
+    selectedTicketId,
+    setSelectedTicketId,
+    notifications,
+    handleNotificationsOpened,
+    handleSubmitTicket,
+    handleClaim,
+    handleResolve,
+    handleSnooze,
+    handleEscalate,
+    handleRedirectTeams,
+    handleUnsnooze,
+    handleUnassign,
+    handleReopen,
+    handleDeleteTicket,
+    selectedTicket,
+  } = useTicketsData({ organization, teams, user: user ?? null });
+
+  const { filteredTickets, statusCounts } = useFilteredTickets({
+    tickets,
+    statusFilter,
+    priorityFilter,
+    teamFilter,
+    assignedToMe,
+    raisedByMe,
+    searchQuery,
+    userId: user?.id,
+    reporterEmail: user?.email,
+    createdFrom,
+    createdTo,
+  });
+
+  const { displayName: userName, email: userEmail } = getUserIdentity(user);
+
+  const handleLogout = async () => {
+    localStorage.removeItem('cq.filterConfig');
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
-      // Status filter
-      if (statusFilter.length > 0 && !statusFilter.includes(ticket.status)) {
-        return false;
-      }
-      
-      // Priority filter
-      if (priorityFilter.length > 0 && !priorityFilter.includes(ticket.priority)) {
-        return false;
-      }
-      
-      // Team filter
-      if (teamFilter && ticket.teamId !== teamFilter) {
-        return false;
-      }
-      
-      // Assigned to me
-      if (assignedToMe && ticket.assigneeId !== currentUser.id) {
-        return false;
-      }
-      
-      // Search
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          ticket.title.toLowerCase().includes(query) ||
-          ticket.description.toLowerCase().includes(query) ||
-          ticket.reporterEmail.toLowerCase().includes(query) ||
-          ticket.tags.some(tag => tag.toLowerCase().includes(query))
-        );
-      }
-      
-      return true;
-    });
-  }, [tickets, statusFilter, priorityFilter, teamFilter, assignedToMe, searchQuery]);
+  const openOrgSettings = (section: OrgSettingsSectionId = 'organization') => {
+    setOrgSettingsSection(section);
+    setIsOrgSettingsOpen(true);
+  };
 
-  const selectedTicket = tickets.find((t) => t.id === selectedTicketId) || null;
+  const handleCreateOrg = async (name: string) => {
+    try {
+      const org = await createOrganization(name.trim());
+      setOrganization(org);
+      toast({
+        title: 'Organization created!',
+        description: `Invite code: ${org.invite_code}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error) || 'Failed to create organization',
+        variant: 'destructive',
+      });
+    }
+  };
 
-  const handleClaim = (ticketId: string) => {
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === ticketId
-          ? { ...t, assigneeId: currentUser.id, assignee: currentUser, status: 'in-progress' as Status }
-          : t
-      )
+  const handleJoinOrg = async (code: string) => {
+    try {
+      await joinOrganization(code.trim());
+      await refreshOrganization();
+      toast({
+        title: 'Joined organization!',
+        description: 'You are now part of the organization',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error) || 'Failed to join organization',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLeaveOrganization = async () => {
+    if (!organization?.id) return;
+    try {
+      await leaveOrganization(organization.id);
+      toast({
+        title: 'Left organization',
+        description: `You have left ${organization.name}.`,
+      });
+      setSelectedTicketId(null);
+      setOrganization(null);
+      await refreshOrganization();
+    } catch (error) {
+      toast({
+        title: 'Error leaving organization',
+        description: getErrorMessage(error),
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  if (loadingOrg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
     );
-    toast({
-      title: 'Ticket claimed',
-      description: 'You are now the owner of this ticket.',
-    });
-  };
+  }
 
-  const handleResolve = (ticketId: string) => {
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === ticketId
-          ? { ...t, status: 'resolved' as Status, updatedAt: new Date().toISOString() }
-          : t
-      )
+  if (!organization) {
+    return (
+      <OrganizationSetup
+        userName={userName}
+        userEmail={userEmail}
+        onLogout={handleLogout}
+        onCreateOrg={handleCreateOrg}
+        onJoinOrg={handleJoinOrg}
+      />
     );
-    toast({
-      title: 'Ticket resolved',
-      description: 'The ticket has been marked as resolved.',
-    });
-  };
-
-  const handleSnooze = (ticketId: string) => {
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === ticketId
-          ? { ...t, status: 'snoozed' as Status, updatedAt: new Date().toISOString() }
-          : t
-      )
-    );
-    toast({
-      title: 'Ticket snoozed',
-      description: 'The ticket has been snoozed.',
-    });
-  };
-
-  const handleSubmit = (data: { title: string; description: string; reporterEmail: string; category: string; priority: Priority }) => {
-    const newTicket: Ticket = {
-      id: String(tickets.length + 1),
-      title: data.title,
-      description: data.description,
-      reporterEmail: data.reporterEmail,
-      category: data.category,
-      priority: data.priority,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      source: 'web',
-      tags: [],
-      suggestedTeam: 'frontend',
-      suggestedConfidence: 0.75,
-      summary: 'New ticket awaiting triage.',
-    };
-    
-    setTickets((prev) => [newTicket, ...prev]);
-    toast({
-      title: 'Ticket submitted',
-      description: 'Your ticket has been created successfully.',
-    });
-  };
+  }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
+    <div className="relative flex h-screen bg-background overflow-hidden flex-col lg:flex-row">
       <NavSidebar
-        statusFilter={statusFilter}
-        priorityFilter={priorityFilter}
-        teamFilter={teamFilter}
-        assignedToMe={assignedToMe}
-        onStatusFilterChange={setStatusFilter}
-        onPriorityFilterChange={setPriorityFilter}
-        onTeamFilterChange={setTeamFilter}
-        onAssignedToMeChange={setAssignedToMe}
+        filterState={filterState}
+        onFilterChange={handleFilterChange}
+        teams={teams}
+        statusCounts={statusCounts}
+        isAdmin={isAdmin}
+        organizationName={organization?.name}
+        onOrgSettings={() => openOrgSettings('organization')}
+        onManageTeams={() => openOrgSettings('teams')}
+        onLeaveOrganization={handleLeaveOrganization}
+        isTeamsLoading={loadingTeams}
+        viewMode={viewMode}
+        onViewChange={setViewMode}
       />
 
-      {/* Main Content */}
-      <div className="flex flex-1 min-w-0">
-        {/* Ticket List */}
-        <TicketList
-          tickets={filteredTickets}
-          selectedTicketId={selectedTicketId}
-          onSelectTicket={setSelectedTicketId}
-          filters={filters}
-          onSearchChange={setSearchQuery}
-        />
+      {viewMode === 'tickets' ? (
+        <>
+          <div className="flex flex-1 min-w-0 flex-col lg:flex-row">
+            <TicketList
+              tickets={filteredTickets}
+              selectedTicketId={selectedTicketId}
+              onSelectTicket={setSelectedTicketId}
+              filterState={filterState}
+              onFilterChange={handleFilterChange}
+              teams={teams}
+              statusCounts={statusCounts}
+              notifications={notifications}
+              onNotificationsOpen={handleNotificationsOpened}
+              isLoading={loadingTickets || loadingTeams}
+            />
 
-        {/* Ticket Detail */}
-        <TicketDetail
-          ticket={selectedTicket}
-          onClose={() => setSelectedTicketId(null)}
-          onClaim={handleClaim}
-          onResolve={handleResolve}
-          onSnooze={handleSnooze}
-        />
-      </div>
+            <TicketDetail
+              ticket={selectedTicket}
+              onClose={() => setSelectedTicketId(null)}
+              onClaim={handleClaim}
+              onResolve={handleResolve}
+              onSnooze={handleSnooze}
+              onUnsnooze={handleUnsnooze}
+              onEscalate={handleEscalate}
+              onRedirectTeams={handleRedirectTeams}
+              onReopen={handleReopen}
+              onUnassign={handleUnassign}
+              onDelete={handleDeleteTicket}
+              teams={teams}
+            />
+          </div>
 
-      {/* Quick Submit FAB */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsSubmitModalOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-lg glow-cyan z-40"
-      >
-        <Plus className="w-6 h-6 text-primary-foreground" />
-      </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsSubmitModalOpen(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-lg glow-cyan z-40"
+          >
+            <Plus className="w-6 h-6 text-primary-foreground" />
+          </motion.button>
 
-      {/* Submit Modal */}
-      <QuickSubmitModal
-        isOpen={isSubmitModalOpen}
-        onClose={() => setIsSubmitModalOpen(false)}
-        onSubmit={handleSubmit}
+          <QuickSubmitModal
+            isOpen={isSubmitModalOpen}
+            onClose={() => setIsSubmitModalOpen(false)}
+            teams={teams}
+            onSubmit={handleSubmitTicket}
+          />
+        </>
+      ) : (
+        <>Not Implemented</>
+      )}
+
+      <OrgSettingsDialog
+        open={isOrgSettingsOpen}
+        onClose={() => setIsOrgSettingsOpen(false)}
+        organization={organization}
+        teams={teams}
+        onRenameOrg={handleRenameOrganization}
+        onCreateTeam={handleCreateTeamDialog}
+        onUpdateTeam={handleUpdateTeamDialog}
+        onDeleteTeam={handleDeleteTeamDialog}
+        initialSection={orgSettingsSection}
       />
     </div>
   );
