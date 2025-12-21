@@ -171,7 +171,7 @@ export default function Register() {
             </Alert>
           )}
 
-          <Button 
+          {/* <Button 
             onClick={handleGoogleRegister} 
             variant="outline" 
             className="w-full"
@@ -196,22 +196,22 @@ export default function Register() {
               />
             </svg>
             Continue with Google
-          </Button>
+          </Button> */}
 
-          <div className="relative">
+          {/* <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-white px-2 text-muted-foreground">Or</span>
             </div>
-          </div>
+          </div> */}
 
           <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            {/* <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email">Email</TabsTrigger>
               <TabsTrigger value="phone">Phone</TabsTrigger>
-            </TabsList>
+            </TabsList> */}
 
             <TabsContent value="email">
               <form onSubmit={handleRegister} className="space-y-4 mt-4">
