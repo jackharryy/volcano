@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { upsertCommentReaction, removeCommentReaction } from '@/services/ticketService';
+import { upsertCommentReaction, removeCommentReaction } from '@/services/tickets/ticketService';
 import { ActivityTab } from './ActivityTab';
 import { AttachmentsSection } from './AttachmentsSection';
 import { CommentInput } from './CommentInput';

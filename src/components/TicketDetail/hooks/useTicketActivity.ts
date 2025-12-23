@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Comment, TicketEvent } from '@/types/ticket';
-import { addComment, deleteComment, fetchCommentsByTicket, fetchEventsByTicket } from '@/services/ticketService';
+import { addComment, deleteComment, fetchCommentsByTicket, fetchEventsByTicket } from '@/services/tickets/ticketService';
 
 export function useTicketActivity(ticketId: string | undefined) {
   const [comments, setComments] = useState<Comment[]>([]);

@@ -15,9 +15,9 @@ import {
   unsnoozeTicket,
   unassignTicket,
   updateTicketTeams,
-} from '@/services/ticketService';
+} from '@/services/tickets/ticketService';
 import type { User } from '@supabase/supabase-js';
-import { assignTicketNumbers } from '../utils';
+import { assignTicketNumbers } from '@/lib/utils';
 import type { TicketDraft } from '@/types/ticket';
 import { getErrorMessage } from '@/lib/errorHelpers';
 

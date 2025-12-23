@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Attachment } from '@/types/ticket';
-import { fetchAttachmentsByTicket, uploadAttachment } from '@/services/ticketService';
+import { fetchAttachmentsByTicket, uploadAttachment } from '@/services/tickets/ticketService';
 
 export function useTicketAttachments(ticketId: string | undefined) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);

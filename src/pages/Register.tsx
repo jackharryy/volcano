@@ -162,7 +162,7 @@ export default function Register() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Register</CardTitle>
-          <CardDescription>Choose your preferred registration method</CardDescription>
+          <CardDescription>Register with email</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (

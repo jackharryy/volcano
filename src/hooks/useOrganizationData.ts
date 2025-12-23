@@ -14,7 +14,7 @@ import {
 import { normalizeTeamIcon, defaultTeamIcon } from '@/lib/teamIcons';
 import { toast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errorHelpers';
-import { normalizeTeams, toSlug } from '../utils';
+import { normalizeTeams, toSlug } from '@/lib/utils';
 
 export function useOrganizationData() {
   const [organization, setOrganization] = useState<Organization | null>(null);
